@@ -55,8 +55,8 @@ void AG_InitWeapons()
     w.zoom_fov        = 75;
     w.sound_fire      = "weapons/pistol_fire.ogg";
     w.sound_reload    = "weapons/pistol_reload.ogg";
-    w.model_world     = "models/weapons/w_pistol.iqm";
-    w.model_view      = "models/weapons/v_pistol.iqm";
+    w.model_world     = "models/weapons/pistol.obj";
+    w.model_view      = "models/weapons/pistol.obj";
 
     // ── WEP_SMG (MP5-style) ────────────────────
     w = AG_Weapons[WEP_SMG];
@@ -81,8 +81,8 @@ void AG_InitWeapons()
     w.zoom_fov        = 72;
     w.sound_fire      = "weapons/smg_fire.ogg";
     w.sound_reload    = "weapons/smg_reload.ogg";
-    w.model_world     = "models/weapons/w_smg.iqm";
-    w.model_view      = "models/weapons/v_smg.iqm";
+    w.model_world     = "models/weapons/smg.obj";
+    w.model_view      = "models/weapons/smg.obj";
 
     // ── WEP_SHOTGUN ────────────────────────────
     w = AG_Weapons[WEP_SHOTGUN];
@@ -107,8 +107,8 @@ void AG_InitWeapons()
     w.zoom_fov        = 80;
     w.sound_fire      = "weapons/shotgun_fire.ogg";
     w.sound_reload    = "weapons/shotgun_reload.ogg";
-    w.model_world     = "models/weapons/w_shotgun.iqm";
-    w.model_view      = "models/weapons/v_shotgun.iqm";
+    w.model_world     = "models/weapons/shotgun.obj";
+    w.model_view      = "models/weapons/shotgun.obj";
 
     // ── WEP_RIFLE (AK-style) ───────────────────
     w = AG_Weapons[WEP_RIFLE];
@@ -133,8 +133,8 @@ void AG_InitWeapons()
     w.zoom_fov        = 68;
     w.sound_fire      = "weapons/rifle_fire.ogg";
     w.sound_reload    = "weapons/rifle_reload.ogg";
-    w.model_world     = "models/weapons/w_rifle.iqm";
-    w.model_view      = "models/weapons/v_rifle.iqm";
+    w.model_world     = "models/weapons/rifle.obj";
+    w.model_view      = "models/weapons/rifle.obj";
 
     // ── WEP_SNIPER ─────────────────────────────
     w = AG_Weapons[WEP_SNIPER];
@@ -159,8 +159,8 @@ void AG_InitWeapons()
     w.zoom_fov        = 20;  // strong zoom
     w.sound_fire      = "weapons/sniper_fire.ogg";
     w.sound_reload    = "weapons/sniper_reload.ogg";
-    w.model_world     = "models/weapons/w_sniper.iqm";
-    w.model_view      = "models/weapons/v_sniper.iqm";
+    w.model_world     = "models/weapons/sniper.obj";
+    w.model_view      = "models/weapons/sniper.obj";
 
     // ── WEP_MACHINEGUN (LMG) ───────────────────
     w = AG_Weapons[WEP_MACHINEGUN];
@@ -185,8 +185,8 @@ void AG_InitWeapons()
     w.zoom_fov        = 65;
     w.sound_fire      = "weapons/mg_fire.ogg";
     w.sound_reload    = "weapons/mg_reload.ogg";
-    w.model_world     = "models/weapons/w_mg.iqm";
-    w.model_view      = "models/weapons/v_mg.iqm";
+    w.model_world     = "models/weapons/machinegun.obj";
+    w.model_view      = "models/weapons/machinegun.obj";
 
     // ── WEP_GRENADE ────────────────────────────
     w = AG_Weapons[WEP_GRENADE];
