@@ -1,0 +1,13 @@
+../../data/progs.dat
+
+defs.qh
+../common/constants.qh
+../common/physics.qh
+../common/weapons/weapons.qh
+../common/weapons/weapon_defs.qc
+forward_decls.qh
+player.qc
+weapons_fire.qc
+gamemodes/tdm.qc
+gamemodes/bomb.qc
+main.qc

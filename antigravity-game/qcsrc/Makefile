@@ -14,20 +14,14 @@ all: server client
 server: $(PROGS_DAT)
 client: $(CSPROGS_DAT)
 
-$(PROGS_DAT): server/main.qc
+$(PROGS_DAT):
 	@mkdir -p $(DATA_OUT)
-	$(GMQCC) $(GMQCC_FLAGS) \
-		-config server/server.cfg \
-		-o $@ \
-		server/main.qc
+	cd server && $(GMQCC) $(GMQCC_FLAGS) -fftepp -fftepp-predefs -s progs.src
 	@echo "Server QC compiled: $@"
 
-$(CSPROGS_DAT): client/main.qc
+$(CSPROGS_DAT):
 	@mkdir -p $(DATA_OUT)
-	$(GMQCC) $(GMQCC_FLAGS) \
-		-config client/client.cfg \
-		-o $@ \
-		client/main.qc
+	cd client && $(GMQCC) $(GMQCC_FLAGS) -fftepp -fftepp-predefs -s progs.src
 	@echo "Client QC compiled: $@"
 
 clean:

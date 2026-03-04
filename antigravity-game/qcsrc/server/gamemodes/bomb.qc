@@ -1,7 +1,7 @@
 // Antigravity - bomb.qc
 // Bomb Defuse game mode (CS-style)
 
-#include "../../common/constants.qh"
+
 
 // ─────────────────────────────────────────────
 // State
@@ -32,7 +32,7 @@ void AG_Bomb_Init()
     round_number   = 1;
     rounds_alpha   = 0;
     rounds_bravo   = 0;
-    bomb_planted   = false;
+    bomb_planted   = 0;
     bomb_carrier   = world;
     bomb_entity    = world;
 
@@ -42,7 +42,7 @@ void AG_Bomb_Init()
 void AG_Bomb_StartWarmup()
 {
     round_phase = 0;
-    AG_BroadcastMessage("^3Warmup phase. Get ready!");
+    bprint(strcat("^3Warmup phase. Get ready!", "\n"));
 
     // Give everyone pistols + knife during warmup
     entity e;
@@ -65,11 +65,11 @@ void AG_Bomb_StartWarmup()
 void AG_Bomb_StartRound()
 {
     round_phase      = 1;
-    bomb_planted     = false;
+    bomb_planted     = 0;
     bomb_carrier     = world;
     round_start_time = time;
 
-    AG_BroadcastMessage("^2Round ^3", ftos(round_number), "^2 started!");
+    bprint(strcat("^2Round ^3", ftos(round_number), "^2 started!", "\n"));
 
     // Spawn all players
     entity e;
@@ -85,7 +85,7 @@ void AG_Bomb_StartRound()
     if (carrier)
     {
         bomb_carrier = carrier;
-        carrier.has_bomb = true;
+        carrier.has_bomb = 1;
         centerprint(carrier, "^1You have the BOMB! Plant at site A or B.");
     }
 
@@ -126,13 +126,13 @@ void AG_Bomb_PlantStart(entity player, float site)
     if (bomb_planted) return;
     if (round_phase != 1) return;
 
-    player.planting     = true;
+    player.planting     = 1;
     player.plant_progress = 0;
     bomb_site_id        = site;
     bomb_site           = player.origin;
 
-    AG_BroadcastMessage("^1BOMB BEING PLANTED at site ^3",
-        (site == 1) ? "A" : "B", "^1!");
+    bprint(strcat("^1BOMB BEING PLANTED at site ^3",
+        (site == 1) ? "A" : "B", "^1!", "\n"));
 }
 
 void AG_Bomb_PlantTick(entity player)
@@ -142,7 +142,7 @@ void AG_Bomb_PlantTick(entity player)
     // Cancel if player moves or stops pressing use
     if (!player.button_use || vlen(player.velocity) > 5)
     {
-        player.planting = false;
+        player.planting = 0;
         player.plant_progress = 0;
         return;
     }
@@ -152,16 +152,16 @@ void AG_Bomb_PlantTick(entity player)
     if (player.plant_progress >= 1.0)
     {
         AG_Bomb_DoPlant(player);
-        player.planting = false;
+        player.planting = 0;
     }
 }
 
 void AG_Bomb_DoPlant(entity player)
 {
-    bomb_planted       = true;
+    bomb_planted       = 1;
     bomb_plant_time    = time;
     bomb_carrier       = world;
-    player.has_bomb    = false;
+    player.has_bomb    = 0;
 
     // Spawn bomb entity on ground
     bomb_entity            = spawn();
@@ -175,8 +175,8 @@ void AG_Bomb_DoPlant(entity player)
     // Sound + alert
     sound(bomb_entity, CHAN_AUTO, "bomb/plant.ogg", 1, ATTN_NORM);
 
-    AG_BroadcastMessage("^1BOMB PLANTED at site ^3",
-        (bomb_site_id == 1) ? "A" : "B", "^1! Defuse it!");
+    bprint(strcat("^1BOMB PLANTED at site ^3",
+        (bomb_site_id == 1) ? "A" : "B", "^1! Defuse it!", "\n"));
     round_phase = 2;
 }
 
@@ -185,14 +185,14 @@ void AG_Bomb_DoPlant(entity player)
 // ─────────────────────────────────────────────
 void AG_Bomb_DefuseStart(entity player)
 {
-    if (player.team_id != TEAM_BRAVO) return;
+    if (player.ag_team != TEAM_BRAVO) return;
     if (!bomb_planted) return;
     if (vlen(player.origin - bomb_entity.origin) > 64) return;
 
-    player.defusing      = true;
+    player.defusing      = 1;
     player.defuse_progress = 0;
 
-    AG_BroadcastMessage("^2Defusing bomb...");
+    bprint(strcat("^2Defusing bomb...", "\n"));
 }
 
 void AG_Bomb_DefuseTick(entity player)
@@ -202,7 +202,7 @@ void AG_Bomb_DefuseTick(entity player)
     if (!player.button_use || vlen(player.velocity) > 5
         || vlen(player.origin - bomb_entity.origin) > 64)
     {
-        player.defusing = false;
+        player.defusing = 0;
         player.defuse_progress = 0;
         return;
     }
@@ -214,7 +214,7 @@ void AG_Bomb_DefuseTick(entity player)
     if (player.defuse_progress >= 1.0)
     {
         AG_Bomb_Defused(player);
-        player.defusing = false;
+        player.defusing = 0;
     }
 }
 
@@ -222,10 +222,10 @@ void AG_Bomb_Defused(entity player)
 {
     if (bomb_entity) remove(bomb_entity);
     bomb_entity  = world;
-    bomb_planted = false;
+    bomb_planted = 0;
 
     sound(player, CHAN_AUTO, "bomb/defuse.ogg", 1, ATTN_NONE);
-    AG_BroadcastMessage("^2Bomb DEFUSED! Bravo wins the round.");
+    bprint(strcat("^2Bomb DEFUSED! Bravo wins the round.", "\n"));
     AG_Bomb_EndRound(TEAM_BRAVO);
 }
 
@@ -255,9 +255,9 @@ void AG_Bomb_Explode()
 
     remove(bomb_entity);
     bomb_entity  = world;
-    bomb_planted = false;
+    bomb_planted = 0;
 
-    AG_BroadcastMessage("^1BOMB EXPLODED! Alpha wins the round.");
+    bprint(strcat("^1BOMB EXPLODED! Alpha wins the round.", "\n"));
     AG_Bomb_EndRound(TEAM_ALPHA);
 }
 
@@ -271,8 +271,8 @@ void AG_Bomb_CheckElimination()
     FOR_EACH_CLIENT(e)
     {
         if (e.classname != "player" || !e.is_alive) continue;
-        if (e.team_id == TEAM_ALPHA) alpha_alive++;
-        else if (e.team_id == TEAM_BRAVO) bravo_alive++;
+        if (e.ag_team == TEAM_ALPHA) alpha_alive++;
+        else if (e.ag_team == TEAM_BRAVO) bravo_alive++;
     }
 
     if (alpha_alive == 0 && !bomb_planted)
@@ -293,14 +293,14 @@ void AG_Bomb_EndRound(float winner_team)
     FOR_EACH_CLIENT(e)
     {
         if (e.classname != "player") continue;
-        if (e.team_id == winner_team)
+        if (e.ag_team == winner_team)
         {
-            e.last_round_won = true;
+            e.last_round_won = 1;
             e.loss_streak    = 0;
         }
         else
         {
-            e.last_round_won = false;
+            e.last_round_won = 0;
             e.loss_streak    = min(e.loss_streak + 1, 5);
         }
     }
@@ -339,21 +339,21 @@ void AG_Bomb_SwapSides()
     FOR_EACH_CLIENT(e)
     {
         if (e.classname != "player") continue;
-        if (e.team_id == TEAM_ALPHA) e.team_id = TEAM_BRAVO;
-        else if (e.team_id == TEAM_BRAVO) e.team_id = TEAM_ALPHA;
+        if (e.ag_team == TEAM_ALPHA) e.ag_team = TEAM_BRAVO;
+        else if (e.ag_team == TEAM_BRAVO) e.ag_team = TEAM_ALPHA;
     }
-    AG_BroadcastMessage("^3Teams have swapped sides.");
+    bprint(strcat("^3Teams have swapped sides.", "\n"));
 }
 
 void AG_Bomb_EndMatch(float winner_team)
 {
     if (winner_team == TEAM_NONE)
-        AG_BroadcastMessage("^3Match DRAW! ", ftos(rounds_alpha), " - ", ftos(rounds_bravo));
+        bprint(strcat("^3Match DRAW! ", ftos(rounds_alpha), " - ", ftos(rounds_bravo), "\n"));
     else if (winner_team == TEAM_ALPHA)
-        AG_BroadcastMessage("^4ALPHA ^2wins the match! ", ftos(rounds_alpha), " - ", ftos(rounds_bravo));
+        bprint(strcat("^4ALPHA ^2wins the match! ", ftos(rounds_alpha), " - ", ftos(rounds_bravo), "\n"));
     else
-        AG_BroadcastMessage("^1BRAVO ^2wins the match! ", ftos(rounds_bravo), " - ", ftos(rounds_alpha));
+        bprint(strcat("^1BRAVO ^2wins the match! ", ftos(rounds_bravo), " - ", ftos(rounds_alpha), "\n"));
 
     AG_ShowScoreboard();
-    localcmd("changelevel ", cvar_string("ag_nextmap"), "\n");
+    localcmd(strcat("changelevel ", cvar_string("ag_nextmap"), "\n"));
 }

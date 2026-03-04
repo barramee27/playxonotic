@@ -1,5 +1,5 @@
 // Antigravity - weapons.qh
-// Weapon definitions and structs
+// Weapon definitions in proper QuakeC (no structs)
 
 #define WEP_NONE        0
 #define WEP_KNIFE       1
@@ -11,8 +11,35 @@
 #define WEP_MACHINEGUN  7
 #define WEP_GRENADE     8
 #define WEP_FLASHBANG   9
+#define WEP_COUNT       10
 
-// Player weapon fields
+// ── Weapon stat arrays (indexed by WEP_* constants) ──────────────
+// QuakeC has no structs — use parallel arrays
+string  wep_name[WEP_COUNT];
+float   wep_price[WEP_COUNT];
+float   wep_damage_min[WEP_COUNT];
+float   wep_damage_max[WEP_COUNT];
+float   wep_damage_head[WEP_COUNT];
+float   wep_firerate[WEP_COUNT];
+float   wep_reload_time[WEP_COUNT];
+float   wep_mag_size[WEP_COUNT];
+float   wep_reserve[WEP_COUNT];
+float   wep_range_falloff[WEP_COUNT];
+float   wep_spread_stand[WEP_COUNT];
+float   wep_spread_crouch[WEP_COUNT];
+float   wep_spread_move[WEP_COUNT];
+float   wep_spread_aim[WEP_COUNT];
+float   wep_recoil_up[WEP_COUNT];
+float   wep_recoil_side[WEP_COUNT];
+float   wep_penetration[WEP_COUNT];
+float   wep_is_auto[WEP_COUNT];
+float   wep_zoom_fov[WEP_COUNT];
+string  wep_snd_fire[WEP_COUNT];
+string  wep_snd_reload[WEP_COUNT];
+string  wep_model_world[WEP_COUNT];
+string  wep_model_view[WEP_COUNT];
+
+// ── Player weapon entity fields ───────────────────────────────────
 .float  weapon_primary;
 .float  weapon_secondary;
 .float  current_weapon;
@@ -22,31 +49,40 @@
 .float  weapon_reload_timer;
 .float  weapon_fire_timer;
 .float  weapon_is_reloading;
-.float  weapon_is_aiming;     // right-click ADS
-.float  weapon_sway;          // spread multiplier from movement
+.float  weapon_is_aiming;
+.float  weapon_sway;
+.float  has_bomb;
+.float  has_defusekit;
+.float  weapon_type;
+.float  grenade_type;
+.float  site_id;
+.float  planting;
+.float  plant_progress;
+.float  defusing;
+.float  defuse_progress;
+.float  button_sprint;
+.float  button_reload;
+.float  button_use;
+.float  loss_streak;
+.float  last_round_won;
 
-typedef struct {
-    string  name;
-    float   price;            // buy menu cost
-    float   damage_min;
-    float   damage_max;
-    float   damage_headshot;
-    float   fire_rate;        // shots per second
-    float   reload_time;
-    float   mag_size;
-    float   reserve_size;
-    float   range_falloff;    // damage drops off at this distance
-    float   spread_stand;
-    float   spread_crouch;
-    float   spread_move;      // extra spread while moving
-    float   spread_aim;       // ADS spread reduction multiplier
-    float   recoil_up;
-    float   recoil_side;
-    float   penetration;      // wall penetration depth (units)
-    float   is_auto;          // 1 = full auto, 0 = semi
-    float   zoom_fov;         // ADS field of view
-    string  sound_fire;
-    string  sound_reload;
-    string  model_world;      // world model
-    string  model_view;       // first-person view model
-} WeaponDef;
+// Additional player fields
+.float  button_crouch;
+.float  is_alive;
+.float  stamina;
+.float  money;
+.float  ag_team;
+.float  respawn_timer;
+.float  regen_timer;
+.float  sprint_timer;
+.float  footstep_timer;
+.float  crouch_state;
+.float  last_damage_time;
+.float  kills;
+.float  deaths;
+.float  assists;
+.entity last_attacker;
+.float  loss_streak;
+.float  last_round_won;
+.float  ag_armor;
+.float  g_type;

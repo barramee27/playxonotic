@@ -1,0 +1,75 @@
+// Antigravity - forward_decls.qh
+// Forward declarations for all server functions
+
+// player.qc
+void    AG_PlayerSpawn(entity player);
+void    AG_PlayerDamage(entity player, entity attacker, float dmg, float dmgtype, vector hitpos);
+void    AG_PlayerDie(entity player, entity killer, float dmgtype);
+void    AG_PlayerRegenTick(entity player);
+void    AG_PlayerSprintTick(entity player);
+void    AG_PlayerCrouchTick(entity player);
+void    AG_PlayerRespawnCheck(entity player);
+void    AG_PlayerThink();
+
+// weapons_fire.qc
+void    AG_WeaponFire(entity player);
+void    AG_WeaponReload(entity player);
+void    AG_WeaponReloadFinish(entity player);
+void    AG_ApplyRecoil(entity player, float up, float side);
+void    AG_TraceBullet(entity shooter, vector src, vector dir, float pen_depth, float dmg, float dmgtype);
+void    AG_ThrowGrenade(entity player, float gtype);
+void    AG_GrenadeExplode();
+float   AG_GetSpread(entity player);
+
+// main.qc
+entity  AG_FindSpawnPoint(float ag_team);
+entity  AG_RandomPlayerOnTeam(float ag_team);
+float   AG_AssignTeam();
+string  AG_TeamName(float t);
+float   AG_NearestBombSite(entity player);
+void    AG_ShowScoreboard();
+void    AG_ScheduleRoundStart(float delay);
+void    AG_DropWeapon(entity player);
+void    AG_PickupWeapon();
+void    AG_BroadcastKill(entity killer, entity victim, float dmgtype);
+
+// gamemodes/tdm.qc
+void    AG_TDM_Init();
+void    AG_TDM_OnKill(entity killer, entity victim);
+void    AG_TDM_TimeCheck();
+void    AG_TDM_EndGame(float winner_team);
+
+// gamemodes/bomb.qc
+void    AG_Bomb_Init();
+void    AG_Bomb_StartWarmup();
+void    AG_Bomb_StartRound();
+void    AG_Bomb_DistributeMoney();
+void    AG_Bomb_PlantStart(entity player, float site);
+void    AG_Bomb_PlantTick(entity player);
+void    AG_Bomb_DoPlant(entity player);
+void    AG_Bomb_DefuseStart(entity player);
+void    AG_Bomb_DefuseTick(entity player);
+void    AG_Bomb_Defused(entity player);
+void    AG_Bomb_Explode();
+void    AG_Bomb_CheckElimination();
+void    AG_Bomb_EndRound(float winner_team);
+void    AG_Bomb_SwapSides();
+void    AG_Bomb_EndMatch(float winner_team);
+
+// Round/game state globals
+float   round_number;
+float   rounds_alpha;
+float   rounds_bravo;
+float   round_phase;
+float   round_start_time;
+float   bomb_plant_time;
+float   bomb_planted;
+entity  bomb_carrier;
+entity  bomb_entity;
+vector  bomb_site;
+float   bomb_site_id;
+float   team_score_alpha;
+float   team_score_bravo;
+float   tdm_frag_limit;
+float   tdm_time_limit;
+void    AG_ServerThink();

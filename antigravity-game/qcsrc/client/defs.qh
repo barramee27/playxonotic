@@ -1,0 +1,212 @@
+// Antigravity - defs.qh
+// QuakeC engine built-in definitions
+// Required for gmqcc to recognize engine types and constants
+
+// ── Entity fields (engine) ───────────────────────────────────────
+.vector origin;
+.vector velocity;
+.vector avelocity;
+.vector angles;
+.vector v_angle;
+.vector punchangle;
+.vector view_ofs;
+.vector mins, maxs;
+.vector absmin, absmax;
+.vector size;
+
+.float  movetype;
+.float  solid;
+.float  scale;
+.float  skin;
+.float  frame;
+.float  model;
+.string modelindex;
+.float  effects;
+.float  flags;
+
+.float  takedamage;
+.float  deadflag;
+.float  spawnflags;
+.float  colormap;
+.float  team;
+.float  health;
+
+.string netname;
+.string classname;
+.string message;
+.string target;
+.string targetname;
+
+.float  button0;    // fire
+.float  button1;    // secondary
+.float  button2;    // ADS / alt fire
+.float  button3;
+.float  button4;
+.float  button5;
+.float  button6;
+.float  button7;
+
+.float  impulse;
+.float  fixangle;
+
+.entity owner;
+.entity groundentity;
+.entity chain;
+
+.void() think;
+.void() touch;
+.void() use;
+.void() blocked;
+.float  nextthink;
+
+.void() PlayerPreThink;
+.void() PlayerPostThink;
+
+// ── Globals (engine) ────────────────────────────────────────────
+entity  self;
+entity  other;
+entity  world;
+float   time;
+float   frametime;
+vector  v_forward, v_right, v_up;
+float   trace_fraction;
+vector  trace_endpos;
+entity  trace_ent;
+float   trace_startsolid;
+string  mapname;
+
+// ── Engine constants ─────────────────────────────────────────────
+#define MOVETYPE_NONE       0
+#define MOVETYPE_WALK       3
+#define MOVETYPE_TOSS       4
+#define MOVETYPE_BOUNCE     5
+#define MOVETYPE_FLY        6
+
+#define SOLID_NOT           0
+#define SOLID_TRIGGER       1
+#define SOLID_BBOX          2
+#define SOLID_SLIDEBOX      3
+#define SOLID_BSP           4
+
+#define DEAD_NO             0
+#define DEAD_DYING          1
+#define DEAD_DEAD           2
+
+#define DAMAGE_NO           0
+#define DAMAGE_YES          1
+#define DAMAGE_AIM          2
+
+#define MOVE_NORMAL         0
+#define MOVE_NOMONSTERS     1
+#define MOVE_MISSILE        2
+
+#define CHAN_AUTO           0
+#define CHAN_WEAPON         1
+#define CHAN_VOICE          2
+#define CHAN_ITEM           3
+#define CHAN_BODY           4
+
+#define ATTN_NONE           0
+#define ATTN_NORM           1
+#define ATTN_IDLE           2
+#define ATTN_STATIC         3
+
+#define MSG_BROADCAST       0
+#define MSG_ONE             1
+#define MSG_ALL             2
+
+#define SVC_TEMPENTITY      23
+#define TE_BLOOD            14
+#define TE_GUNSHOT          2
+#define TE_EXPLOSION        5
+
+#define STAT_HEALTH         0
+#define STAT_ARMOR          3
+#define STAT_AMMO           6
+#define STAT_SHELLS         7
+
+#define IE_KEYDOWN          0
+#define IE_KEYUP            1
+#define K_TAB               9
+#define K_ESCAPE            27
+#define K_SPACE             32
+
+// ── Engine built-in functions ────────────────────────────────────
+void    setorigin(entity e, vector org)               = #2;
+void    setmodel(entity e, string m)                  = #3;
+void    setsize(entity e, vector mn, vector mx)       = #4;
+void    bprint(string s, ...)                         = #6;
+void    sprint(entity e, string s)                    = #7;
+entity  find(entity start, .string fld, string val)   = #18;
+entity  spawn()                                       = #14;
+void    remove(entity e)                              = #15;
+void    traceline(vector v1, vector v2, float t, entity e) = #16;
+void    tracebox(vector v1, vector mn, vector mx, vector v2, float t, entity e) = #90;
+void    makevectors(vector a)                         = #1;
+void    sound(entity e, float ch, string snd, float vol, float att) = #8;
+void    WriteByte(float to, float val)                = #59;
+void    WriteCoord(float to, float x)                 = #61;
+void    WriteString(float to, string s)               = #63;
+float   vlen(vector v)                                = #12;
+vector  normalize(vector v)                           = #9;
+float   random()                                      = #7;
+float   crandom()                                     = #0; // -1 to 1
+void    print(string s, ...)                          = #339;
+void    centerprint(entity e, string s)               = #73;
+void    stuffcmd(entity e, string cmd)                = #21;
+void    localcmd(string cmd)                          = #46;
+void    registercvar(string name, string value)       = #93;
+float   cvar(string name)                             = #45;
+string  cvar_string(string name)                      = #94;
+void    cvar_set(string name, string val)             = #96;
+string  ftos(float f)                                 = #26;
+string  strcat(string a, string b, ...)               = #115;
+float   floor(float f)                                = #42;
+float   min(float a, float b)                         = #41;
+float   max(float a, float b)                         = #40;
+void    SUB_Remove()                                  = #0;
+void    stuffcmd_all(string cmd)                      = #0;
+
+// ── FOR_EACH_CLIENT macro ────────────────────────────────────────
+// In Xonotic-style QC: iterate clients using find()
+#define FOR_EACH_CLIENT(var) for(var = world; (var = find(var, classname, "player")) != world; )
+
+// ── lerpv helper (client-side) ───────────────────────────────────
+vector lerpv(vector a, vector b, float t)
+{
+    return a + (b - a) * t;
+}
+
+// Additional engine fields
+.float  maxspeed;
+.float  gravity;
+.float  air_finished;
+.float  water_level;
+.float  frags;
+.float  armorvalue;
+.float  armortype;
+.float  dmg;
+.float  dmgtime;
+.float  show_hostile;
+.float  attack_finished;
+.float  pain_finished;
+.float  inpain;
+.float  cnt;
+void    lightstyle(float style, string val) = #35;
+
+// Client-side globals
+float   vid_width;
+float   vid_height;
+float   intermission;
+float   pmove_vel;
+
+// Draw functions
+void    drawfill(vector pos, vector size, vector rgb, float alpha, float flags) = #460;
+void    drawpic(vector pos, string pic, vector size, vector rgb, float alpha, float flags) = #455;
+void    drawstring(vector pos, string text, vector size, vector rgb, float alpha, float flags) = #459;
+
+#define DRAWFLAG_NORMAL  0
+#define DRAWFLAG_ADDITIVE 1
+
+// Client stats
+float   getstatf(float stat) = #470;

@@ -1,28 +1,13 @@
 // Antigravity - player.qc
 // Server-side player logic: spawn, death, respawn, damage
 
-#include "../common/constants.qh"
-#include "../common/physics.qh"
+
+
 
 // ─────────────────────────────────────────────
 // Player fields
 // ─────────────────────────────────────────────
-.float  health;
-.float  armor;
-.float  stamina;
-.float  money;
-.float  team_id;
-.float  is_alive;
-.float  respawn_timer;
-.float  regen_timer;
-.float  sprint_timer;
-.float  footstep_timer;
 .float  crouch_state;   // 0 = stand, 1 = crouch
-.float  last_damage_time;
-.float  kills;
-.float  deaths;
-.float  assists;
-.entity last_attacker;
 
 // ─────────────────────────────────────────────
 // Spawn player
@@ -30,9 +15,9 @@
 void AG_PlayerSpawn(entity player)
 {
     player.health          = PLAYER_HEALTH_MAX;
-    player.armor           = 0;
+    player.ag_armor           = 0;
     player.stamina         = SPRINT_MAX;
-    player.is_alive        = true;
+    player.is_alive        = 1;
     player.respawn_timer   = 0;
     player.regen_timer     = 0;
     player.crouch_state    = 0;
@@ -49,12 +34,12 @@ void AG_PlayerSpawn(entity player)
         player.money = ECONOMY_START_MONEY;
 
     // Place at spawn point
-    entity sp = AG_FindSpawnPoint(player.team_id);
+    entity sp = AG_FindSpawnPoint(player.ag_team);
     if (sp)
     {
         setorigin(player, sp.origin + '0 0 1');
         player.angles = sp.angles;
-        player.fixangle = true;
+        player.fixangle = 1;
     }
 }
 
@@ -67,7 +52,7 @@ void AG_PlayerDamage(entity player, entity attacker, float dmg, float dmgtype, v
     if (dmg <= 0) return;
 
     // Friendly fire check
-    if (attacker != player && attacker.team_id == player.team_id)
+    if (attacker != player && attacker.ag_team == player.ag_team)
     {
         if (!cvar("ag_friendly_fire")) return;
         dmg *= 0.5;  // friendly fire penalty
@@ -75,11 +60,11 @@ void AG_PlayerDamage(entity player, entity attacker, float dmg, float dmgtype, v
 
     // Armor absorbs 60% of damage (up to armor amount)
     float armor_absorb = 0;
-    if (player.armor > 0 && dmgtype != DMGTYPE_FALL)
+    if (player.ag_armor > 0 && dmgtype != DMGTYPE_FALL)
     {
         armor_absorb  = dmg * 0.6;
-        if (armor_absorb > player.armor) armor_absorb = player.armor;
-        player.armor -= armor_absorb;
+        if (armor_absorb > player.ag_armor) armor_absorb = player.ag_armor;
+        player.ag_armor -= armor_absorb;
         dmg          -= armor_absorb;
     }
 
@@ -103,7 +88,7 @@ void AG_PlayerDamage(entity player, entity attacker, float dmg, float dmgtype, v
 // ─────────────────────────────────────────────
 void AG_PlayerDie(entity player, entity killer, float dmgtype)
 {
-    player.is_alive   = false;
+    player.is_alive   = 0;
     player.health     = 0;
     player.deadflag   = DEAD_DYING;
     player.movetype   = MOVETYPE_TOSS;
@@ -180,7 +165,7 @@ void AG_PlayerSprintTick(entity player)
     }
 
     // Weapon sway on sprint (cvar sent to client)
-    setcvar("ag_cl_sprinting", ftos(sprinting && player.stamina > 0));
+    cvar_set("ag_cl_sprinting", ftos(sprinting && player.stamina > 0));
 }
 
 // ─────────────────────────────────────────────

@@ -1,13 +1,13 @@
 // Antigravity - main.qc
 // Server entry point: world spawn, frame think, client connect
 
-#include "../common/constants.qh"
-#include "../common/physics.qh"
-#include "../common/weapons/weapons.qh"
-#include "player.qc"
-#include "weapons_fire.qc"
-#include "gamemodes/tdm.qc"
-#include "gamemodes/bomb.qc"
+
+
+
+
+
+
+
 
 // ─────────────────────────────────────────────
 // Server cvars with defaults
@@ -65,22 +65,22 @@ void AG_ServerThink()
 void ClientConnect()
 {
     self.classname     = "player";
-    self.team_id       = AG_AssignTeam();
+    self.ag_team       = AG_AssignTeam();
     self.money         = ECONOMY_START_MONEY;
     self.kills         = 0;
     self.deaths        = 0;
     self.assists       = 0;
     self.loss_streak   = 0;
-    self.last_round_won = false;
+    self.last_round_won = 0;
     self.weapon_primary   = WEP_PISTOL;
     self.weapon_secondary = WEP_KNIFE;
     self.current_weapon   = WEP_PISTOL;
-    self.ammo_primary     = AG_Weapons[WEP_PISTOL].mag_size;
-    self.ammo_reserve     = AG_Weapons[WEP_PISTOL].reserve_size;
+    self.ammo_primary     = wep_mag_size[WEP_PISTOL];
+    self.ammo_reserve     = wep_reserve[WEP_PISTOL];
 
     AG_PlayerSpawn(self);
 
-    bprint(self.netname, "^7 joined team ", AG_TeamName(self.team_id), "\n");
+    bprint(self.netname, "^7 joined team ", AG_TeamName(self.ag_team), "\n");
 }
 
 // ─────────────────────────────────────────────
@@ -93,7 +93,7 @@ void ClientDisconnect()
     if (self == bomb_carrier)
     {
         bomb_carrier = world;
-        self.has_bomb = false;
+        self.has_bomb = 0;
     }
 }
 
@@ -141,8 +141,8 @@ float AG_AssignTeam()
     entity e;
     FOR_EACH_CLIENT(e)
     {
-        if (e.team_id == TEAM_ALPHA) alpha++;
-        else if (e.team_id == TEAM_BRAVO) bravo++;
+        if (e.ag_team == TEAM_ALPHA) alpha++;
+        else if (e.ag_team == TEAM_BRAVO) bravo++;
     }
     return (alpha <= bravo) ? TEAM_ALPHA : TEAM_BRAVO;
 }
@@ -162,14 +162,14 @@ entity AG_FindSpawnPoint(float team)
 
     for (sp = world; (sp = find(sp, classname, "info_player_start")); )
     {
-        if (sp.team_id != team) continue;
+        if (sp.ag_team != team) continue;
 
         // Pick farthest from enemies
         float min_enemy_dist = 9999;
         entity e;
         FOR_EACH_CLIENT(e)
         {
-            if (e.team_id == team || !e.is_alive) continue;
+            if (e.ag_team == team || !e.is_alive) continue;
             float d = vlen(sp.origin - e.origin);
             if (d < min_enemy_dist) min_enemy_dist = d;
         }
@@ -189,7 +189,7 @@ entity AG_RandomPlayerOnTeam(float team)
     float count = 0;
     FOR_EACH_CLIENT(e)
     {
-        if (e.classname != "player" || e.team_id != team) continue;
+        if (e.classname != "player" || e.ag_team != team) continue;
         count++;
         if (random() < 1.0 / count) pick = e;
     }
@@ -212,10 +212,6 @@ float AG_NearestBombSite(entity player)
     return best_id;
 }
 
-void AG_BroadcastMessage(string s, ...)
-{
-    bprint(s, "\n");
-}
 
 void AG_ShowScoreboard()
 {
@@ -257,4 +253,12 @@ void AG_PickupWeapon()
     player.ammo_reserve   = self.ammo_reserve;
     sound(player, CHAN_ITEM, "items/weapon_pickup.ogg", 1, ATTN_NORM);
     remove(self);
+}
+
+void AG_BroadcastKill(entity killer, entity victim, float dmgtype)
+{
+    if (killer && killer != world)
+        bprint(strcat(killer.netname, " ^7killed ", victim.netname, "\n"));
+    else
+        bprint(strcat(victim.netname, " ^7died\n"));
 }

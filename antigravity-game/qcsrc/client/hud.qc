@@ -1,192 +1,114 @@
 // Antigravity - hud.qc
-// Client-side HUD: health, armor, ammo, radar, round timer
+// Client-side HUD
 
-#include "../common/constants.qh"
-
-// ─────────────────────────────────────────────
-// HUD cvars (received from server)
-// ─────────────────────────────────────────────
 float cl_health;
-float cl_armor;
+float cl_ag_armor;
 float cl_ammo_mag;
 float cl_ammo_reserve;
 float cl_money;
-float cl_team;
-float cl_kills;
-float cl_deaths;
-float cl_flash_intensity;  // flashbang
-float cl_sprinting;
-float cl_round_time_left;
-float cl_scoreboard;
-
-// ─────────────────────────────────────────────
-// Colors
-// ─────────────────────────────────────────────
-#define COL_RED     '1.0 0.2 0.2'
-#define COL_GREEN   '0.2 1.0 0.3'
-#define COL_BLUE    '0.2 0.5 1.0'
-#define COL_YELLOW  '1.0 1.0 0.2'
-#define COL_WHITE   '1.0 1.0 1.0'
-#define COL_ALPHA   '0.3 0.5 1.0'
-#define COL_BRAVO   '1.0 0.3 0.3'
-#define COL_GREY    '0.5 0.5 0.5'
-
-// ─────────────────────────────────────────────
-// Main HUD draw (called every frame)
-// ─────────────────────────────────────────────
-void AG_DrawHUD()
-{
-    float sw = vid_width;
-    float sh = vid_height;
-
-    // Flashbang overlay
-    if (cl_flash_intensity > 0)
-    {
-        drawfill('0 0 0', [sw, sh, 0], COL_WHITE, cl_flash_intensity, DRAWFLAG_NORMAL);
-        cl_flash_intensity = max(0, cl_flash_intensity - frametime * 1.5);
-    }
-
-    if (intermission) return;
-
-    // ── Bottom-left: Health + Armor ────────────
-    vector hp_pos    = [20, sh - 60, 0];
-    vector armor_pos = [20, sh - 35, 0];
-
-    float hp_frac = cl_health / PLAYER_HEALTH_MAX;
-    vector hp_col = lerpv(COL_RED, COL_GREEN, hp_frac);
-
-    drawpic(hp_pos, "hud/heart", [24, 24, 0], COL_WHITE, 0.8, DRAWFLAG_NORMAL);
-    drawstring(hp_pos + [28, 2, 0], strcat(ftos(floor(cl_health))), [20, 20, 0],
-               hp_col, 1.0, DRAWFLAG_NORMAL);
-
-    if (cl_armor > 0)
-    {
-        float ar_frac = cl_armor / PLAYER_ARMOR_MAX;
-        drawpic(armor_pos, "hud/shield", [20, 20, 0], COL_WHITE, 0.7, DRAWFLAG_NORMAL);
-        drawstring(armor_pos + [24, 2, 0], strcat(ftos(floor(cl_armor))), [18, 18, 0],
-                   lerpv(COL_GREY, COL_BLUE, ar_frac), 0.9, DRAWFLAG_NORMAL);
-    }
-
-    // ── Bottom-right: Ammo ──────────────────────
-    vector ammo_pos = [sw - 120, sh - 60, 0];
-    drawstring(ammo_pos, strcat(ftos(cl_ammo_mag)), [36, 36, 0],
-               (cl_ammo_mag <= 5) ? COL_RED : COL_WHITE, 1.0, DRAWFLAG_NORMAL);
-    drawstring(ammo_pos + [50, 12, 0], strcat(" / ", ftos(cl_ammo_reserve)),
-               [18, 18, 0], COL_GREY, 0.8, DRAWFLAG_NORMAL);
-
-    // ── Top-center: Round timer ─────────────────
-    if (cl_round_time_left > 0)
-    {
-        float mins = floor(cl_round_time_left / 60);
-        float secs = floor(cl_round_time_left - mins * 60);
-        string timer_str = strcat(ftos(mins), ":", (secs < 10) ? "0" : "", ftos(secs));
-
-        vector timer_pos = [(sw / 2) - 40, 12, 0];
-        vector timer_col = (cl_round_time_left < 30) ? COL_RED : COL_WHITE;
-        drawstring(timer_pos, timer_str, [30, 30, 0], timer_col, 1.0, DRAWFLAG_NORMAL);
-    }
-
-    // ── Top-right: Money (bomb mode only) ───────
-    if (cvar("ag_gamemode") == GAMEMODE_BOMB && cl_money > 0)
-    {
-        drawstring([sw - 100, 12, 0], strcat("$", ftos(cl_money)),
-                   [20, 20, 0], COL_GREEN, 1.0, DRAWFLAG_NORMAL);
-    }
-
-    // ── Center: Crosshair ───────────────────────
-    AG_DrawCrosshair();
-
-    // ── Sprint bar ──────────────────────────────
-    if (cl_sprinting)
-        AG_DrawSprintBar();
-
-    // ── Scoreboard overlay ──────────────────────
-    if (cl_scoreboard)
-        AG_DrawScoreboard();
-
-    // ── Hit indicator ───────────────────────────
-    AG_DrawHitIndicator();
-
-    // ── Kill feed ──────────────────────────────
-    AG_DrawKillFeed();
-}
-
-// ─────────────────────────────────────────────
-// Crosshair
-// ─────────────────────────────────────────────
-float cl_crosshair_spread;
-float cl_crosshair_shrink_timer;
-
-void AG_DrawCrosshair()
-{
-    float sw = vid_width, sh = vid_height;
-    float cx = sw / 2, cy = sh / 2;
-    float gap = 4 + cl_crosshair_spread * 40;
-    float len = 8;
-    float w   = 1.5;
-    vector col = COL_WHITE;
-
-    drawfill([cx - gap - len, cy - w/2, 0], [len, w, 0], col, 0.9, DRAWFLAG_NORMAL);
-    drawfill([cx + gap, cy - w/2, 0],       [len, w, 0], col, 0.9, DRAWFLAG_NORMAL);
-    drawfill([cx - w/2, cy - gap - len, 0], [w, len, 0], col, 0.9, DRAWFLAG_NORMAL);
-    drawfill([cx - w/2, cy + gap, 0],       [w, len, 0], col, 0.9, DRAWFLAG_NORMAL);
-
-    // Center dot
-    drawfill([cx - 1, cy - 1, 0], [2, 2, 0], col, 0.7, DRAWFLAG_NORMAL);
-
-    // Shrink over time
-    if (cl_crosshair_spread > 0)
-        cl_crosshair_spread = max(0, cl_crosshair_spread - frametime * 3);
-}
-
-// ─────────────────────────────────────────────
-// Sprint stamina bar
-// ─────────────────────────────────────────────
 float cl_stamina;
+float cl_sprinting;
+float cl_scoreboard;
+float cl_flash_intensity;
+float cl_crosshair_spread;
+float cl_round_time_left;
 
-void AG_DrawSprintBar()
-{
-    float sw = vid_width, sh = vid_height;
-    float barw = 120, barh = 6;
-    float bx = sw/2 - barw/2, by = sh * 0.72;
-
-    drawfill([bx, by, 0], [barw, barh, 0], '0.1 0.1 0.1', 0.6, DRAWFLAG_NORMAL);
-    drawfill([bx, by, 0], [barw * (cl_stamina / SPRINT_MAX), barh, 0],
-             COL_YELLOW, 0.8, DRAWFLAG_NORMAL);
-}
-
-// ─────────────────────────────────────────────
-// Hit indicator (flash red wedge from hit direction)
-// ─────────────────────────────────────────────
-float cl_hit_angle;
-float cl_hit_timer;
-
-void AG_DrawHitIndicator()
-{
-    if (cl_hit_timer <= 0) return;
-    cl_hit_timer -= frametime;
-
-    float sw = vid_width, sh = vid_height;
-    float alpha = cl_hit_timer * 2;
-
-    // Simple red flash in direction of damage
-    // Full implementation would rotate a wedge image
-    drawfill([0, 0, 0], [sw, sh, 0], COL_RED, alpha * 0.15, DRAWFLAG_NORMAL);
-}
-
-// ─────────────────────────────────────────────
-// Kill feed (right side, last 5 kills)
-// ─────────────────────────────────────────────
+// Kill feed
 string kf_killers[5];
 string kf_victims[5];
 string kf_weapons[5];
 float  kf_times[5];
 float  kf_count;
 
+// Colors
+vector COL_RED;
+vector COL_GREEN;
+vector COL_BLUE;
+vector COL_YELLOW;
+vector COL_WHITE;
+vector COL_GREY;
+
+void AG_InitColors()
+{
+    COL_RED    = '1.0 0.2 0.2';
+    COL_GREEN  = '0.2 1.0 0.3';
+    COL_BLUE   = '0.2 0.5 1.0';
+    COL_YELLOW = '1.0 1.0 0.2';
+    COL_WHITE  = '1.0 1.0 1.0';
+    COL_GREY   = '0.5 0.5 0.5';
+}
+
+
+void AG_DrawCrosshair()
+{
+    float sw = vid_width;
+    float sh = vid_height;
+    float cx = sw * 0.5;
+    float cy = sh * 0.5;
+    float gap = 4 + cl_crosshair_spread * 40;
+    float len = 8;
+    float w   = 1.5;
+
+    vector p1, p2, p3, p4, p5;
+
+    // Left
+    p1_x = cx - gap - len; p1_y = cy - w * 0.5; p1_z = 0;
+    drawfill(p1, '8 1.5 0', COL_WHITE, 0.9, DRAWFLAG_NORMAL);
+    // Right
+    p2_x = cx + gap; p2_y = cy - w * 0.5; p2_z = 0;
+    drawfill(p2, '8 1.5 0', COL_WHITE, 0.9, DRAWFLAG_NORMAL);
+    // Up
+    p3_x = cx - w * 0.5; p3_y = cy - gap - len; p3_z = 0;
+    drawfill(p3, '1.5 8 0', COL_WHITE, 0.9, DRAWFLAG_NORMAL);
+    // Down
+    p4_x = cx - w * 0.5; p4_y = cy + gap; p4_z = 0;
+    drawfill(p4, '1.5 8 0', COL_WHITE, 0.9, DRAWFLAG_NORMAL);
+
+    if (cl_crosshair_spread > 0)
+        cl_crosshair_spread = max(0, cl_crosshair_spread - frametime * 3);
+}
+
+void AG_DrawSprintBar()
+{
+    float sw = vid_width;
+    float sh = vid_height;
+    float barw = 120;
+    float bx = sw * 0.5 - barw * 0.5;
+    float by = sh * 0.72;
+
+    vector bp, bs, bfp, bfs;
+    bp_x = bx; bp_y = by; bp_z = 0;
+    bs_x = barw; bs_y = 6; bs_z = 0;
+    drawfill(bp, bs, '0.1 0.1 0.1', 0.6, DRAWFLAG_NORMAL);
+
+    bfp = bp;
+    bfs_x = barw * (cl_stamina * 0.01); bfs_y = 6; bfs_z = 0;
+    drawfill(bfp, bfs, COL_YELLOW, 0.8, DRAWFLAG_NORMAL);
+}
+
+void AG_DrawKillFeed()
+{
+    float sw = vid_width;
+    float y  = 80;
+    float i;
+    vector tp;
+
+    for (i = 0; i < kf_count; i++)
+    {
+        if (time - kf_times[i] > 6) continue;
+        float alpha = 1.0 - (time - kf_times[i]) / 6.0;
+        tp_x = sw - 280; tp_y = y; tp_z = 0;
+        drawstring(tp,
+            strcat(kf_killers[i], " > ", kf_victims[i]),
+            '14 14 0', COL_WHITE, alpha, DRAWFLAG_NORMAL);
+        y = y + 18;
+    }
+}
+
 void AG_AddKillFeedEntry(string killer, string victim, string weapon)
 {
     float i;
-    for (i = 4; i > 0; i--)
+    for (i = 4; i > 0; i = i - 1)
     {
         kf_killers[i] = kf_killers[i-1];
         kf_victims[i] = kf_victims[i-1];
@@ -197,37 +119,84 @@ void AG_AddKillFeedEntry(string killer, string victim, string weapon)
     kf_victims[0] = victim;
     kf_weapons[0] = weapon;
     kf_times[0]   = time;
-    kf_count      = min(kf_count + 1, 5);
+    if (kf_count < 5) kf_count = kf_count + 1;
 }
 
-void AG_DrawKillFeed()
+void AG_DrawHUD()
 {
     float sw = vid_width;
-    float y = 80;
-    float i;
+    float sh = vid_height;
 
-    for (i = 0; i < kf_count; i++)
+    // Flash overlay
+    if (cl_flash_intensity > 0)
     {
-        if (time - kf_times[i] > 6) continue;
-        float alpha = 1.0 - (time - kf_times[i]) / 6.0;
-
-        drawstring([sw - 280, y, 0],
-            strcat(kf_killers[i], " ^7> ", kf_victims[i], " ^3[", kf_weapons[i], "]"),
-            [14, 14, 0], COL_WHITE, alpha, DRAWFLAG_NORMAL);
-        y += 18;
+        vector fp, fs;
+        fp = '0 0 0';
+        fs_x = sw; fs_y = sh; fs_z = 0;
+        drawfill(fp, fs, COL_WHITE, cl_flash_intensity, DRAWFLAG_NORMAL);
+        cl_flash_intensity = max(0, cl_flash_intensity - frametime * 1.5);
     }
-}
 
-// ─────────────────────────────────────────────
-// Scoreboard
-// ─────────────────────────────────────────────
-void AG_DrawScoreboard()
-{
-    float sw = vid_width, sh = vid_height;
-    float bx = sw/2 - 300, by = sh/2 - 200;
-    float bw = 600, bh = 400;
+    if (intermission) return;
 
-    drawfill([bx, by, 0], [bw, bh, 0], '0 0 0', 0.7, DRAWFLAG_NORMAL);
-    drawstring([bx + bw/2 - 60, by + 10, 0], GAME_NAME, [24, 24, 0],
-               COL_WHITE, 1.0, DRAWFLAG_NORMAL);
+    // Health (bottom-left)
+    vector hp_pos;
+    hp_pos_x = 20; hp_pos_y = sh - 60; hp_pos_z = 0;
+    float hp_frac = cl_health * 0.01;
+    vector hp_col = lerpv(COL_RED, COL_GREEN, hp_frac);
+    drawstring(hp_pos, strcat("HP ", ftos(floor(cl_health))), '20 20 0', hp_col, 1.0, DRAWFLAG_NORMAL);
+
+    // Armor
+    if (cl_ag_armor > 0)
+    {
+        vector ap;
+        ap_x = 20; ap_y = sh - 35; ap_z = 0;
+        drawstring(ap, strcat("AR ", ftos(floor(cl_ag_armor))), '18 18 0', COL_BLUE, 0.9, DRAWFLAG_NORMAL);
+    }
+
+    // Ammo (bottom-right)
+    vector ammo_pos;
+    ammo_pos_x = sw - 120; ammo_pos_y = sh - 60; ammo_pos_z = 0;
+    vector ammo_col;
+    if (cl_ammo_mag <= 5) ammo_col = COL_RED;
+    else                  ammo_col = COL_WHITE;
+    drawstring(ammo_pos, ftos(cl_ammo_mag), '36 36 0', ammo_col, 1.0, DRAWFLAG_NORMAL);
+
+    vector res_pos;
+    res_pos_x = ammo_pos_x + 50; res_pos_y = ammo_pos_y + 12; res_pos_z = 0;
+    drawstring(res_pos, strcat("/ ", ftos(cl_ammo_reserve)), '18 18 0', COL_GREY, 0.8, DRAWFLAG_NORMAL);
+
+    // Round timer (top-center)
+    if (cl_round_time_left > 0)
+    {
+        float mins = floor(cl_round_time_left * 0.01666);
+        float secs = floor(cl_round_time_left - mins * 60);
+        string timer_str;
+        if (secs < 10)
+            timer_str = strcat(ftos(mins), ":0", ftos(secs));
+        else
+            timer_str = strcat(ftos(mins), ":", ftos(secs));
+
+        vector tp;
+        tp_x = sw * 0.5 - 40; tp_y = 12; tp_z = 0;
+        vector tc;
+        if (cl_round_time_left < 30) tc = COL_RED;
+        else                         tc = COL_WHITE;
+        drawstring(tp, timer_str, '30 30 0', tc, 1.0, DRAWFLAG_NORMAL);
+    }
+
+    // Money
+    if (cl_money > 0)
+    {
+        vector mp;
+        mp_x = sw - 100; mp_y = 12; mp_z = 0;
+        drawstring(mp, strcat("$", ftos(cl_money)), '20 20 0', COL_GREEN, 1.0, DRAWFLAG_NORMAL);
+    }
+
+    AG_DrawCrosshair();
+
+    if (cl_sprinting)
+        AG_DrawSprintBar();
+
+    AG_DrawKillFeed();
 }

@@ -1,0 +1,8 @@
+../../data/csprogs.dat
+
+defs.qh
+../common/constants.qh
+../common/physics.qh
+../common/weapons/weapons.qh
+hud.qc
+main.qc

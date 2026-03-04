@@ -1,30 +1,29 @@
 // Antigravity - weapons_fire.qc
 // Weapon firing, recoil, reload, hit detection
 
-#include "../common/constants.qh"
-#include "../common/weapons/weapons.qh"
-#include "../common/weapons/weapon_defs.qc"
+
+
+
 
 // ─────────────────────────────────────────────
 // Spread calculation
 // ─────────────────────────────────────────────
 float AG_GetSpread(entity player)
 {
-    WeaponDef w     = AG_Weapons[player.current_weapon];
-    float spread    = w.spread_stand;
+        float spread    = wep_spread_stand[player.current_weapon];
     float vel       = vlen(player.velocity);
 
     // Add movement spread
     if (vel > 10)
-        spread += w.spread_move * (vel / PLAYER_SPEED_RUN);
+        spread += wep_spread_move[player.current_weapon] * (vel / PLAYER_SPEED_RUN);
 
     // Crouch reduction
     if (player.crouch_state)
-        spread = min(spread, w.spread_crouch);
+        spread = min(spread, wep_spread_crouch[player.current_weapon]);
 
     // ADS reduction
     if (player.weapon_is_aiming)
-        spread *= w.spread_aim;
+        spread *= wep_spread_aim[player.current_weapon];
 
     // Clamp
     return max(spread, 0);
@@ -33,9 +32,9 @@ float AG_GetSpread(entity player)
 // ─────────────────────────────────────────────
 // Hitscan bullet trace with penetration
 // ─────────────────────────────────────────────
-void AG_TraceBullet(entity shooter, vector src, vector dir, float pen_remaining, float dmg, float dmgtype)
+void AG_TraceBullet(entity shooter, vector src, vector dir, float pen_depth, float dmg, float dmgtype)
 {
-    if (pen_remaining < 0) return;
+    if (pen_depth < 0) return;
 
     traceline(src, src + dir * 8192, MOVE_NORMAL, shooter);
 
@@ -53,18 +52,18 @@ void AG_TraceBullet(entity shooter, vector src, vector dir, float pen_remaining,
     }
 
     // Wall penetration: continue bullet through thin surfaces
-    if (pen_remaining > 0 && trace_fraction < 1.0)
+    if (pen_depth > 0 && trace_fraction < 1.0)
     {
         // Check surface thickness
         vector behind = trace_endpos + dir * 2;
-        traceline(behind, behind + dir * pen_remaining, MOVE_NORMAL, shooter);
+        traceline(behind, behind + dir * pen_depth, MOVE_NORMAL, shooter);
 
         if (trace_fraction > 0)
         {
             // Bullet exits the wall, continues with reduced damage
             float exit_dmg = dmg * (1.0 - trace_fraction * 0.5);
             AG_TraceBullet(shooter, trace_endpos + dir * trace_fraction, dir,
-                           pen_remaining - trace_fraction * pen_remaining, exit_dmg, dmgtype);
+                           pen_depth - trace_fraction * pen_depth, exit_dmg, dmgtype);
         }
     }
 }
@@ -84,16 +83,15 @@ void AG_WeaponFire(entity player)
         return;
     }
 
-    WeaponDef w = AG_Weapons[player.current_weapon];
-
+    
     // Set next fire time
-    player.weapon_fire_timer = time + (1.0 / w.fire_rate);
+    player.weapon_fire_timer = time + (1.0 / wep_firerate[player.current_weapon]);
 
     // Consume ammo
     player.ammo_primary -= 1;
 
     // Play fire sound
-    sound(player, CHAN_WEAPON, w.sound_fire, 1, ATTN_NORM);
+    sound(player, CHAN_WEAPON, wep_snd_fire[player.current_weapon], 1, ATTN_NORM);
 
     // Calculate spread
     float spread = AG_GetSpread(player);
@@ -119,11 +117,11 @@ void AG_WeaponFire(entity player)
         for (i = 0; i < pellets; i++)
         {
             vector pdir = v_forward
-                        + v_right * (crandom() * w.spread_stand * 2)
-                        + v_up    * (crandom() * w.spread_stand * 2);
+                        + v_right * (crandom() * wep_spread_stand[player.current_weapon] * 2)
+                        + v_up    * (crandom() * wep_spread_stand[player.current_weapon] * 2);
             AG_TraceBullet(player, src, normalize(pdir),
-                           w.penetration,
-                           w.damage_min + random() * (w.damage_max - w.damage_min),
+                           wep_penetration[player.current_weapon],
+                           wep_damage_min[player.current_weapon] + random() * (wep_damage_max[player.current_weapon] - wep_damage_min[player.current_weapon]),
                            DMGTYPE_BULLET);
         }
     }
@@ -134,13 +132,13 @@ void AG_WeaponFire(entity player)
     else
     {
         AG_TraceBullet(player, src, dir,
-                       w.penetration,
-                       w.damage_min + random() * (w.damage_max - w.damage_min),
+                       wep_penetration[player.current_weapon],
+                       wep_damage_min[player.current_weapon] + random() * (wep_damage_max[player.current_weapon] - wep_damage_min[player.current_weapon]),
                        DMGTYPE_BULLET);
     }
 
     // Apply recoil
-    AG_ApplyRecoil(player, w.recoil_up, w.recoil_side);
+    AG_ApplyRecoil(player, wep_recoil_up[player.current_weapon], wep_recoil_side[player.current_weapon]);
 
     // Muzzle flash effect
     WriteByte(MSG_BROADCAST, SVC_TEMPENTITY);
@@ -157,15 +155,14 @@ void AG_WeaponReload(entity player)
 {
     if (player.weapon_is_reloading) return;
 
-    WeaponDef w = AG_Weapons[player.current_weapon];
-    if (w.reload_time <= 0) return;
+        if (wep_reload_time[player.current_weapon] <= 0) return;
     if (player.ammo_reserve <= 0) return;
-    if (player.ammo_primary >= w.mag_size) return;
+    if (player.ammo_primary >= wep_mag_size[player.current_weapon]) return;
 
-    player.weapon_is_reloading = true;
-    player.weapon_reload_timer = time + w.reload_time;
+    player.weapon_is_reloading = 1;
+    player.weapon_reload_timer = time + wep_reload_time[player.current_weapon];
 
-    sound(player, CHAN_ITEM, w.sound_reload, 1, ATTN_NORM);
+    sound(player, CHAN_ITEM, wep_snd_reload[player.current_weapon], 1, ATTN_NORM);
 }
 
 void AG_WeaponReloadFinish(entity player)
@@ -173,13 +170,12 @@ void AG_WeaponReloadFinish(entity player)
     if (!player.weapon_is_reloading) return;
     if (time < player.weapon_reload_timer) return;
 
-    WeaponDef w     = AG_Weapons[player.current_weapon];
-    float need      = w.mag_size - player.ammo_primary;
+        float need      = wep_mag_size[player.current_weapon] - player.ammo_primary;
     float take      = min(need, player.ammo_reserve);
 
     player.ammo_primary      += take;
     player.ammo_reserve      -= take;
-    player.weapon_is_reloading = false;
+    player.weapon_is_reloading = 0;
 }
 
 // ─────────────────────────────────────────────
@@ -198,13 +194,13 @@ void AG_ApplyRecoil(entity player, float up, float side)
 // ─────────────────────────────────────────────
 // Grenade throw
 // ─────────────────────────────────────────────
-void AG_ThrowGrenade(entity player, float gren_type)
+void AG_ThrowGrenade(entity player, float gtype)
 {
     entity g        = spawn();
     g.classname     = "grenade";
     g.owner         = player;
-    g.team_id       = player.team_id;
-    g.gren_type     = gren_type;
+    g.ag_team       = player.ag_team;
+    g.g_type = gtype;
     g.movetype      = MOVETYPE_BOUNCE;
     g.solid         = SOLID_BBOX;
 
@@ -216,7 +212,7 @@ void AG_ThrowGrenade(entity player, float gren_type)
 
     setsize(g, '-4 -4 -4', '4 4 4');
 
-    if (gren_type == WEP_GRENADE)
+    if (gtype == WEP_GRENADE)
         g.nextthink = time + 3.0;
     else
         g.nextthink = time + 1.5;
@@ -228,7 +224,7 @@ void AG_GrenadeExplode()
 {
     entity g = self;
 
-    if (g.gren_type == WEP_FLASHBANG)
+    if (g.g_type == WEP_FLASHBANG)
     {
         // Flash nearby players
         entity e;
@@ -256,10 +252,10 @@ void AG_GrenadeExplode()
         {
             if (!e.is_alive) continue;
             float dist = vlen(e.origin - g.origin);
-            float radius = AG_Weapons[WEP_GRENADE].range_falloff;
+            float radius = wep_range_falloff[WEP_GRENADE];
             if (dist > radius) continue;
 
-            float dmg = AG_Weapons[WEP_GRENADE].damage_max * (1.0 - dist / radius);
+            float dmg = wep_damage_max[WEP_GRENADE] * (1.0 - dist / radius);
             AG_PlayerDamage(e, g.owner, dmg, DMGTYPE_EXPLOSIVE, g.origin);
         }
 
