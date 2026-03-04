@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+playxonotic/frontend/dist/
+playxonotic/desktop/out/
+playxonotic/launcher/target/
+xonotic-web-port/source/darkplaces/build-obj/
+xonotic-web-port/source/darkplaces/*.html
+xonotic-web-port/source/darkplaces/*.js
+xonotic-web-port/source/darkplaces/*.wasm
+xonotic-web-port/source/darkplaces/*.data
+
+# Emscripten cache (rebuilds automatically)
+xonotic-web-port/emscripten_cache/
+
+# Environment and secrets — NEVER commit these
+.env
+.env.*
+*.env
+*.env.local
+*.env.production
+*.env.development
+.env.*.local
+backend.env.*
+deploy/*.env*
+**/secrets.*
+*.secret
+
+# Logs and temp
+*.log
+*.txt
+*.har
+.DS_Store
+.idea/
+.vscode/
+t.txt
+build_log*
+
+# Large game data files (too big for GitHub)
+org.xonotic.Xonotic/
+*.pk3
+xonotic-web-port/
+playxonotic/desktop/node_modules/
+*.deb
+*.wasm
+*.data

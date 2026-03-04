@@ -1,0 +1,52 @@
+// Antigravity - weapons.qh
+// Weapon definitions and structs
+
+#define WEP_NONE        0
+#define WEP_KNIFE       1
+#define WEP_PISTOL      2
+#define WEP_SMG         3
+#define WEP_SHOTGUN     4
+#define WEP_RIFLE       5
+#define WEP_SNIPER      6
+#define WEP_MACHINEGUN  7
+#define WEP_GRENADE     8
+#define WEP_FLASHBANG   9
+
+// Player weapon fields
+.float  weapon_primary;
+.float  weapon_secondary;
+.float  current_weapon;
+.float  ammo_primary;
+.float  ammo_secondary;
+.float  ammo_reserve;
+.float  weapon_reload_timer;
+.float  weapon_fire_timer;
+.float  weapon_is_reloading;
+.float  weapon_is_aiming;     // right-click ADS
+.float  weapon_sway;          // spread multiplier from movement
+
+typedef struct {
+    string  name;
+    float   price;            // buy menu cost
+    float   damage_min;
+    float   damage_max;
+    float   damage_headshot;
+    float   fire_rate;        // shots per second
+    float   reload_time;
+    float   mag_size;
+    float   reserve_size;
+    float   range_falloff;    // damage drops off at this distance
+    float   spread_stand;
+    float   spread_crouch;
+    float   spread_move;      // extra spread while moving
+    float   spread_aim;       // ADS spread reduction multiplier
+    float   recoil_up;
+    float   recoil_side;
+    float   penetration;      // wall penetration depth (units)
+    float   is_auto;          // 1 = full auto, 0 = semi
+    float   zoom_fov;         // ADS field of view
+    string  sound_fire;
+    string  sound_reload;
+    string  model_world;      // world model
+    string  model_view;       // first-person view model
+} WeaponDef;

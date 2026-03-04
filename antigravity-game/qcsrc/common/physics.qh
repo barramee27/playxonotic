@@ -1,0 +1,32 @@
+// Antigravity - physics.qh
+// Player physics constants and prototypes
+
+// Friction values
+#define FRICTION_GROUND         6.0
+#define FRICTION_AIR            0.3
+#define FRICTION_WATER          4.0
+#define FRICTION_ICE            0.5
+
+// Acceleration
+#define ACCEL_GROUND            10.0
+#define ACCEL_AIR               1.0
+#define ACCEL_WATER             4.0
+
+// Crouch
+#define CROUCH_VIEW_HEIGHT      16
+#define STAND_VIEW_HEIGHT       28
+#define PLAYER_HULL_MIN         '-16 -16 -36'
+#define PLAYER_HULL_MAX         '16 16 36'
+#define PLAYER_CROUCH_MIN       '-16 -16 -18'
+#define PLAYER_CROUCH_MAX       '16 16 18'
+
+// Stamina / Sprint
+#define SPRINT_DRAIN_RATE       20   // stamina per second sprinting
+#define SPRINT_REGEN_RATE       10   // stamina per second recovering
+#define SPRINT_MAX              100
+#define SPRINT_MIN_TO_START     20   // minimum stamina to begin sprint
+
+// Footstep sounds
+#define FOOTSTEP_INTERVAL_RUN   0.35
+#define FOOTSTEP_INTERVAL_WALK  0.5
+#define FOOTSTEP_INTERVAL_CROUCHWALK 0.7

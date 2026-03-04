@@ -1,0 +1,69 @@
+// Antigravity - constants.qh
+// Global constants for the game
+
+// Version
+#define GAME_NAME    "Antigravity"
+#define GAME_VERSION "0.1.0"
+
+// Player constants
+#define PLAYER_HEALTH_MAX       100
+#define PLAYER_ARMOR_MAX        100
+#define PLAYER_HEALTH_REGEN     2       // per second
+#define PLAYER_HEALTH_REGEN_DELAY 5     // seconds after damage before regen
+#define PLAYER_RESPAWN_TIME     3       // seconds
+
+// Movement
+#define PLAYER_SPEED_WALK       250
+#define PLAYER_SPEED_RUN        320
+#define PLAYER_SPEED_CROUCH     120
+#define PLAYER_SPEED_SPRINT     420
+#define PLAYER_JUMP_VELOCITY    270
+#define PLAYER_GRAVITY          800
+
+// Weapons
+#define MAX_WEAPONS             10
+#define WEAPON_SLOT_PRIMARY     0
+#define WEAPON_SLOT_SECONDARY   1
+#define WEAPON_SLOT_MELEE       2
+#define WEAPON_SLOT_GRENADE     3
+
+// Teams
+#define TEAM_NONE               0
+#define TEAM_ALPHA              1   // Attackers
+#define TEAM_BRAVO              2   // Defenders
+#define TEAM_SPECTATOR          255
+
+// Game modes
+#define GAMEMODE_TDM            0   // Team Deathmatch
+#define GAMEMODE_BOMB           1   // Bomb Defuse
+#define GAMEMODE_DOMINATION     2   // Point Capture
+#define GAMEMODE_ELIMINATION    3   // Round-based, no respawn
+
+// Round
+#define ROUND_TIME              120 // 2 min per round
+#define ROUND_WARMUP_TIME       15
+#define ROUND_MAX_ROUNDS        15
+#define ROUND_WIN_ROUNDS        8   // first to 8 rounds wins
+
+// Damage types
+#define DMGTYPE_BULLET          1
+#define DMGTYPE_EXPLOSIVE       2
+#define DMGTYPE_MELEE           3
+#define DMGTYPE_FALL            4
+#define DMGTYPE_FIRE            5
+
+// Hit zones
+#define HIT_HEAD                1.5  // headshot multiplier
+#define HIT_BODY                1.0
+#define HIT_LIMB                0.75
+
+// Economy (Bomb mode)
+#define ECONOMY_START_MONEY     800
+#define ECONOMY_KILL_REWARD     300
+#define ECONOMY_WIN_REWARD      3250
+#define ECONOMY_LOSS_REWARD     1400
+
+// Objectives
+#define BOMB_PLANT_TIME         3.0  // seconds to plant
+#define BOMB_DEFUSE_TIME        5.0  // seconds to defuse
+#define BOMB_EXPLODE_TIME       40.0 // seconds until explosion
