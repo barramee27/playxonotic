@@ -1,13 +1,12 @@
 # =============================================================================
-# GitHub tracks only the Xonotic WebAssembly / web port (xonotic-web-port/).
-# Other folders in this workspace stay on disk but are never committed.
+# GitHub tracks Xonotic WASM (xonotic-web-port/) and the PlayXonotic app
+# (playxonotic/). Everything else in this workspace stays local-only.
 # =============================================================================
 
 # --- Local-only projects (not part of this public tree) ---
 antigravity-game/
 antigravity-ac-deb/
 antigravity-mod/
-playxonotic/
 assaultcube/
 assaultcube-src/
 assaultcube-custom.sh
@@ -31,6 +30,11 @@ org.xonotic.Xonotic/
 # Dependencies
 node_modules/
 
+# --- PlayXonotic build / install outputs (regenerate locally) ---
+playxonotic/frontend/dist/
+playxonotic/desktop/out/
+playxonotic/desktop/node_modules/
+
 # --- Xonotic WASM / Emscripten build outputs (regenerate with build-wasm.sh) ---
 xonotic-web-port/emscripten_cache/
 xonotic-web-port/emscripten_config
@@ -44,6 +48,8 @@ build_log*.txt
 # Environment and secrets — NEVER commit these
 .env
 .env.*
+!.env.example
+!**/.env.example
 *.env
 *.env.local
 *.env.production
