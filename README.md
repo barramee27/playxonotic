@@ -1,121 +1,46 @@
-# Antigravity
+# Xonotic in the browser (WebAssembly)
 
-A tactical first-person/third-person shooter built on the DarkPlaces engine.  
-Think: fast movement, team-based play, economy system, round-based modes.
+This repository is intentionally **narrow**: it holds the **Xonotic tree and DarkPlaces engine work needed to build and run a WebAssembly (Emscripten) client**—plus a small root license file. Everything else you may keep alongside this folder on your machine (other games, launchers, AssaultCube experiments, and so on) is **listed in [.gitignore](.gitignore)** so it stays local and is **not** pushed to GitHub.
 
-[![License: GPL v2](https://img.shields.io/badge/License-GPL_v2-blue.svg)](LICENSE)
+Upstream Xonotic lives primarily on [GitLab](https://gitlab.com/xonotic/xonotic). This GitHub repo is a focused fork for the **WASM / web port** effort.
 
----
+## Repository layout
 
-## Game Modes
+| Path | Purpose |
+|------|--------|
+| [`xonotic-web-port/`](xonotic-web-port/) | Xonotic sources, data, scripts, and **`build-wasm.sh`** for the Emscripten build |
+| [`xonotic-web-port/source/darkplaces`](xonotic-web-port/source/darkplaces) | **Git submodule** — DarkPlaces engine ([xonotic/darkplaces](https://github.com/xonotic/darkplaces)) |
+| [`xonotic-web-port/source/d0_blind_id`](xonotic-web-port/source/d0_blind_id) | **Git submodule** — crypto helper lib used by the stack |
+| [`LICENSE`](LICENSE) | GPLv2 notice for this packaging (engine and game data carry their own licenses under `xonotic-web-port/`) |
 
-| Mode | Description |
-|------|-------------|
-| **TDM** | Team Deathmatch — first team to frag limit wins |
-| **Bomb** | Plant / defuse bomb at site A or B (CS-style) |
-| **Domination** | *(coming soon)* Capture and hold control points |
-| **Elimination** | *(coming soon)* Round-based, one life per round |
-
----
-
-## Weapons
-
-| Weapon | Price | Notes |
-|--------|-------|-------|
-| Knife | Free | One-shot from behind |
-| Pistol | $200 | Starting weapon |
-| SMG | $1,200 | Full auto, short range |
-| Shotgun | $1,300 | 8 pellets, devastating up close |
-| Rifle | $2,700 | Full auto, all-purpose |
-| Sniper | $4,500 | One-shot headshot |
-| Machine Gun | $5,200 | 100-round mag |
-| Grenade | $300 | Cook before throwing |
-| Flashbang | $200 | Blinds enemies |
-
----
-
-## Project Structure
-
-```
-antigravity-game/
-├── qcsrc/
-│   ├── common/
-│   │   ├── constants.qh        # all game constants
-│   │   ├── physics.qh          # movement constants
-│   │   └── weapons/
-│   │       ├── weapons.qh      # weapon struct definitions
-│   │       └── weapon_defs.qc  # all 9 weapons with full stats
-│   ├── server/
-│   │   ├── main.qc             # server entry point
-│   │   ├── player.qc           # spawn, death, regen, sprint, crouch
-│   │   ├── weapons_fire.qc     # shooting, recoil, reload, grenades
-│   │   └── gamemodes/
-│   │       ├── tdm.qc          # Team Deathmatch
-│   │       └── bomb.qc         # Bomb Defuse (CS-style)
-│   ├── client/
-│   │   ├── main.qc             # client entry point
-│   │   └── hud.qc              # HUD: health, ammo, timer, killfeed
-│   ├── menu/
-│   │   └── menu.qc             # in-game buy menu
-│   └── Makefile
-├── scripts/
-│   ├── default.cfg             # all cvars + keybinds
-│   └── mapinfo_template.mapinfo
-├── maps/                       # .map source files
-├── models/                     # .iqm models
-├── sounds/                     # .ogg sounds
-├── textures/                   # texture files
-├── LICENSE
-└── README.md
-```
-
----
-
-## Engine
-
-Built on **DarkPlaces** (GPLv2) — the same engine that powers Xonotic.
-
-The game logic (everything in `qcsrc/`) is written from scratch in **QuakeC**.  
-No Xonotic game code was used or copied.
-
-- DarkPlaces: https://github.com/DarkPlacesEngine/darkplaces
-- QuakeC compiler (gmqcc): https://graphitemaster.github.io/gmqcc/
-
----
-
-## Building
-
-### Requirements
-- `gmqcc` — QuakeC compiler
-- DarkPlaces engine binary
+After cloning, initialize submodules:
 
 ```bash
-# Install gmqcc (Ubuntu/Debian)
-sudo apt install gmqcc
-
-# Or build from source
-git clone https://github.com/graphitemaster/gmqcc && cd gmqcc && make
-
-# Compile game logic
-cd antigravity-game/qcsrc
-make all
-
-# Run
-darkplaces -game antigravity-game +map ag_dust
+git submodule update --init --recursive
 ```
 
----
+## Requirements
+
+- [Emscripten](https://emscripten.org/) (`emcc`, `em++`, `emmake`, …) installed and available in your shell  
+- Standard Unix build tools (`make`, etc.) as expected by the DarkPlaces makefile  
+
+## Build (WebAssembly)
+
+From the **repository root**:
+
+```bash
+cd xonotic-web-port
+./build-wasm.sh
+```
+
+The script sets `DP_MAKE_TARGET=wasm`, points the makefile at Emscripten, and runs `emmake make emscripten-standalone` with crypto/ODE features trimmed for the browser. Build products under `xonotic-web-port/source/darkplaces/` (`.wasm`, `.data`, generated `.html`/`.js`, `build-obj/`, and the local Emscripten cache) are **gitignored** so clones stay small; run the script locally to produce them.
+
+See [`xonotic-web-port/README.md`](xonotic-web-port/README.md) for general Xonotic documentation and [`xonotic-web-port/COPYING`](xonotic-web-port/COPYING) for upstream licensing detail.
 
 ## Contributing
 
-1. Fork the repo
-2. Create a branch: `git checkout -b feature/my-feature`
-3. Commit: `git commit -m "Add my feature"`
-4. Push: `git push origin feature/my-feature`
-5. Open a Pull Request
-
----
+Engine changes usually belong in the **DarkPlaces** submodule (fork, branch, then bump the submodule commit here). Game data and Xonotic-specific packaging live under `xonotic-web-port/`. Keep this repo scoped to the **WASM / web client** story so unrelated side projects never enter the index.
 
 ## License
 
-[GNU General Public License v2](LICENSE) — same as DarkPlaces engine.
+Root [`LICENSE`](LICENSE) is GPLv2, aligned with DarkPlaces. Xonotic assets and combined licensing notes are under `xonotic-web-port/` (see **GPL-2**, **GPL-3**, and **COPYING** there).
