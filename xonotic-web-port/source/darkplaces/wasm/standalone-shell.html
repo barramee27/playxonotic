@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>PlayXonotic - Loading...</title>
+	<style>
+		* { margin: 0; padding: 0; box-sizing: border-box; }
+		body {
+			background: #0a0e17;
+			color: #e5e7eb;
+			font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+			overflow: hidden;
+		}
+		/* Keep canvas in layout (non-zero size) while loading. display:none gives 0×0
+		   drawable for WebGL on many browsers → menu/UI can mis-render and world stays black. */
+		#canvas {
+			position: fixed;
+			inset: 0;
+			width: 100vw;
+			height: 100vh;
+			z-index: 1;
+			opacity: 0;
+			pointer-events: none;
+		}
+		#canvas.game-visible {
+			opacity: 1;
+			pointer-events: auto;
+			z-index: 5;
+		}
+		#loading-screen {
+			position: fixed; inset: 0;
+			display: flex; flex-direction: column; align-items: center;
+			background: #0a0e17; z-index: 1000; transition: opacity 0.5s;
+			overflow-y: auto; padding: 20px 0;
+		}
+		#loading-screen.hidden { opacity: 0; pointer-events: none; }
+		.logo {
+			width: 64px; height: 64px; border-radius: 14px;
+			background: linear-gradient(135deg, #f97316, #ea580c);
+			display: flex; align-items: center; justify-content: center;
+			font-size: 32px; font-weight: 800; color: white;
+			margin-bottom: 12px; animation: pulse 2s ease-in-out infinite;
+		}
+		@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+		h1 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+		h1 span { color: #f97316; }
+		#status { color: #9ca3af; font-size: 13px; margin-bottom: 16px; min-height: 18px; }
+		.downloads { width: 340px; max-width: 85vw; margin-bottom: 14px; }
+		.dl-row { margin-bottom: 10px; }
+		.dl-header { display: flex; justify-content: space-between; margin-bottom: 3px; }
+		.dl-label { font-size: 12px; color: #9ca3af; }
+		.dl-size { font-size: 11px; color: #6b7280; }
+		.dl-bar-outer { width: 100%; height: 5px; background: #1f2937; border-radius: 3px; overflow: hidden; }
+		.dl-bar-inner { height: 100%; background: linear-gradient(90deg,#f97316,#ea580c); border-radius: 3px; width: 0%; transition: width 0.3s; }
+		.dl-bar-inner.done { background: #22c55e; }
+		.total-outer { width: 340px; max-width: 85vw; height: 7px; background: #1f2937; border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
+		.total-inner { height: 100%; background: linear-gradient(90deg,#f97316,#ea580c); border-radius: 4px; width: 0%; transition: width 0.3s; }
+		#total-text { color: #6b7280; font-size: 11px; margin-bottom: 14px; }
+
+		/* Mini-game */
+		#minigame-wrap {
+			margin-bottom: 14px; text-align: center;
+		}
+		#minigame-label {
+			font-size: 11px; color: #6b7280; margin-bottom: 6px;
+		}
+		#minigame {
+			border: 1px solid #1f2937; border-radius: 8px;
+			background: #111827; display: block; margin: 0 auto;
+			cursor: pointer;
+		}
+		#mg-score { font-size: 12px; color: #f97316; margin-top: 4px; }
+
+		.tip {
+			color: #4b5563; font-size: 11px; text-align: center; padding: 0 16px; margin-top: 10px;
+		}
+	</style>
+</head>
+<body>
+	<div id="loading-screen">
+		<div class="logo">X</div>
+		<h1>Play<span>Xonotic</span></h1>
+		<div id="status">Initializing...</div>
+
+		<div class="downloads" id="dl-container"></div>
+		<div class="total-outer"><div class="total-inner" id="total-bar"></div></div>
+		<div id="total-text"></div>
+
+		<!-- Mini-game while downloading -->
+		<div id="minigame-wrap">
+			<div id="minigame-label">Play while you wait! Click/tap to jump.</div>
+			<canvas id="minigame" width="340" height="160"></canvas>
+			<div id="mg-score">Score: 0</div>
+		</div>
+
+		<div class="tip">Created by Barramee Kottanawadee</div>
+	</div>
+
+	<canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+
+	<!-- Mini-game: endless runner -->
+	<script type='text/javascript'>
+	(function() {
+		var cv = document.getElementById('minigame');
+		var ctx = cv.getContext('2d');
+		var W = cv.width, H = cv.height;
+		var ground = H - 20;
+		var player = { x: 40, y: ground, w: 16, h: 20, vy: 0, jumping: false };
+		var obstacles = [];
+		var particles = [];
+		var score = 0;
+		var bestScore = 0;
+		var frame = 0;
+		var speed = 2.5;
+		var alive = true;
+		var scoreEl = document.getElementById('mg-score');
+		var gameActive = true;
+
+		function jump() {
+			if (!alive) { reset(); return; }
+			if (!player.jumping) { player.vy = -7; player.jumping = true; }
+		}
+		cv.addEventListener('click', jump);
+		cv.addEventListener('touchstart', function(e) { e.preventDefault(); jump(); });
+		document.addEventListener('keydown', function(e) {
+			if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); }
+		});
+
+		function reset() {
+			if (score > bestScore) bestScore = score;
+			player.y = ground; player.vy = 0; player.jumping = false;
+			obstacles = []; particles = []; score = 0; frame = 0; speed = 2.5; alive = true;
+		}
+
+		function spawnObstacle() {
+			var h = 14 + Math.random() * 18;
+			obstacles.push({ x: W + 10, y: ground - h, w: 10 + Math.random() * 8, h: h });
+		}
+
+		function addParticles(x, y) {
+			for (var i = 0; i < 6; i++) {
+				particles.push({
+					x: x, y: y,
+					vx: (Math.random() - 0.5) * 4,
+					vy: -Math.random() * 3 - 1,
+					life: 20 + Math.random() * 10
+				});
+			}
+		}
+
+		function update() {
+			if (!gameActive) return;
+			frame++;
+			if (alive) {
+				score++;
+				speed = 2.5 + score / 500;
+				if (frame % Math.max(40, 80 - Math.floor(score / 10)) === 0) spawnObstacle();
+
+				// Player physics
+				player.vy += 0.45;
+				player.y += player.vy;
+				if (player.y >= ground) { player.y = ground; player.vy = 0; player.jumping = false; }
+
+				// Move obstacles
+				for (var i = obstacles.length - 1; i >= 0; i--) {
+					obstacles[i].x -= speed;
+					if (obstacles[i].x + obstacles[i].w < 0) { obstacles.splice(i, 1); continue; }
+					// Collision
+					if (player.x + player.w > obstacles[i].x && player.x < obstacles[i].x + obstacles[i].w &&
+						player.y + player.h > obstacles[i].y) {
+						alive = false;
+						addParticles(player.x + player.w / 2, player.y);
+					}
+				}
+			}
+
+			// Particles
+			for (var j = particles.length - 1; j >= 0; j--) {
+				particles[j].x += particles[j].vx;
+				particles[j].y += particles[j].vy;
+				particles[j].vy += 0.15;
+				particles[j].life--;
+				if (particles[j].life <= 0) particles.splice(j, 1);
+			}
+		}
+
+		function draw() {
+			ctx.fillStyle = '#111827';
+			ctx.fillRect(0, 0, W, H);
+
+			// Ground
+			ctx.fillStyle = '#1f2937';
+			ctx.fillRect(0, ground, W, H - ground);
+			ctx.strokeStyle = '#374151';
+			ctx.beginPath(); ctx.moveTo(0, ground); ctx.lineTo(W, ground); ctx.stroke();
+
+			// Scrolling ground dots
+			ctx.fillStyle = '#374151';
+			for (var d = 0; d < W; d += 20) {
+				var dx = (d - (frame * speed) % 20 + W) % W;
+				ctx.fillRect(dx, ground + 6, 2, 2);
+			}
+
+			// Player
+			if (alive) {
+				ctx.fillStyle = '#f97316';
+				ctx.fillRect(player.x, player.y - player.h, player.w, player.h);
+				// Eye
+				ctx.fillStyle = '#fff';
+				ctx.fillRect(player.x + 10, player.y - player.h + 4, 3, 3);
+			}
+
+			// Obstacles
+			ctx.fillStyle = '#ef4444';
+			for (var i = 0; i < obstacles.length; i++) {
+				var o = obstacles[i];
+				ctx.fillRect(o.x, o.y, o.w, o.h);
+				ctx.fillStyle = '#dc2626';
+				ctx.fillRect(o.x + 1, o.y + 1, o.w - 2, 3);
+				ctx.fillStyle = '#ef4444';
+			}
+
+			// Particles
+			for (var j = 0; j < particles.length; j++) {
+				var p = particles[j];
+				ctx.globalAlpha = p.life / 30;
+				ctx.fillStyle = '#f97316';
+				ctx.fillRect(p.x, p.y, 3, 3);
+			}
+			ctx.globalAlpha = 1;
+
+			// Death message
+			if (!alive) {
+				ctx.fillStyle = 'rgba(10,14,23,0.7)';
+				ctx.fillRect(0, 0, W, H);
+				ctx.fillStyle = '#fff';
+				ctx.font = '14px Inter, sans-serif';
+				ctx.textAlign = 'center';
+				ctx.fillText('Score: ' + score, W/2, H/2 - 8);
+				ctx.font = '11px Inter, sans-serif';
+				ctx.fillStyle = '#9ca3af';
+				ctx.fillText('Click to restart', W/2, H/2 + 12);
+			}
+
+			scoreEl.textContent = 'Score: ' + score + (bestScore > 0 ? '  |  Best: ' + bestScore : '');
+		}
+
+		function loop() {
+			if (!gameActive) return;
+			update();
+			draw();
+			requestAnimationFrame(loop);
+		}
+		loop();
+
+		// Stop mini-game when main game starts
+		window._stopMinigame = function() { gameActive = false; };
+	})();
+	</script>
+
+	<!-- Loading progress tracker -->
+	<script type='text/javascript'>
+		var statusEl = document.getElementById('status');
+		var totalBar = document.getElementById('total-bar');
+		var totalText = document.getElementById('total-text');
+		var dlContainer = document.getElementById('dl-container');
+		var dlRows = {};
+		var gameStarting = false;
+
+		function updateStatus(text) { if (statusEl) statusEl.textContent = text; }
+
+		function ensureDLRows() {
+			if (!window._pk3Progress) return;
+			var keys = Object.keys(window._pk3Progress);
+			for (var i = 0; i < keys.length; i++) {
+				var k = keys[i];
+				if (dlRows[k]) continue;
+				var info = window._pk3Progress[k];
+				var row = document.createElement('div');
+				row.className = 'dl-row';
+				row.innerHTML =
+					'<div class="dl-header"><span class="dl-label">' + info.label + '</span><span class="dl-size" id="dlsz-' + i + '">0 MB</span></div>' +
+					'<div class="dl-bar-outer"><div class="dl-bar-inner" id="dlbar-' + i + '"></div></div>';
+				dlContainer.appendChild(row);
+				dlRows[k] = { bar: document.getElementById('dlbar-' + i), sz: document.getElementById('dlsz-' + i) };
+			}
+		}
+
+		function updateDLProgress() {
+			if (!window._pk3Progress) return;
+			ensureDLRows();
+			var totalLoaded = 0, totalSize = 0, allDone = true;
+			var keys = Object.keys(window._pk3Progress);
+			for (var i = 0; i < keys.length; i++) {
+				var k = keys[i], p = window._pk3Progress[k], r = dlRows[k];
+				if (!r) continue;
+				var pct = p.total > 0 ? (p.loaded / p.total * 100) : 0;
+				r.bar.style.width = pct.toFixed(1) + '%';
+				if (p.done) r.bar.classList.add('done');
+				r.sz.textContent = (p.loaded / 1048576).toFixed(0) + ' / ' + (p.total / 1048576).toFixed(0) + ' MB';
+				totalLoaded += p.loaded; totalSize += p.total;
+				if (!p.done) allDone = false;
+			}
+			if (totalSize > 0) {
+				var tp = (totalLoaded / totalSize * 100).toFixed(1);
+				totalBar.style.width = tp + '%';
+				totalText.textContent = (totalLoaded/1048576).toFixed(0) + ' MB / ' + (totalSize/1048576).toFixed(0) + ' MB (' + tp + '%)';
+			}
+			if (keys.length > 0 && !allDone) updateStatus('Downloading game assets...');
+			else if (allDone && keys.length > 0 && !gameStarting) updateStatus('Starting game engine...');
+		}
+
+		var progressInterval = setInterval(updateDLProgress, 200);
+
+		var Module = {
+			canvas: (function () { return document.getElementById('canvas'); })(),
+			setStatus: function(text) {
+				if (!text) return;
+				var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+				if (m) { updateStatus('Loading core files...'); }
+				else if (text.indexOf('Running') >= 0 || text === '') {
+					gameStarting = true;
+					updateStatus('Starting game engine...');
+					clearInterval(progressInterval);
+					if (window._stopMinigame) window._stopMinigame();
+					function notifyCanvasResize() {
+						try { window.dispatchEvent(new Event('resize')); } catch (e) {}
+						try { window.dispatchEvent(new Event('orientationchange')); } catch (e) {}
+					}
+					setTimeout(function() {
+						var ls = document.getElementById('loading-screen');
+						var cv = document.getElementById('canvas');
+						if (ls) ls.classList.add('hidden');
+						if (cv) {
+							cv.classList.add('game-visible');
+							cv.focus();
+							notifyCanvasResize();
+							requestAnimationFrame(function() {
+								notifyCanvasResize();
+								setTimeout(notifyCanvasResize, 250);
+							});
+						}
+						setTimeout(function() { if (ls) ls.remove(); }, 600);
+					}, 500);
+				}
+			},
+			monitorRunDependencies: function(left) {
+				if (left === 0) updateStatus('Starting game engine...');
+			}
+		};
+		Module['preRun'] = [];
+	</script>
+
+	<script type='text/javascript'>
+		const file_reader = new FileReader();
+		file_reader.addEventListener("load", readf);
+		function readf(event) {
+			const uint8Arr = new Uint8Array(file_reader.result);
+			if (fname.toLowerCase().endsWith('.pak')) currentname = "id1/";
+			else if (fname.toLowerCase().endsWith('.pk3')) currentname = "data/";
+			else currentname = "";
+			try { stream = FS.open(currentname + fname, 'w'); }
+			catch (error) { alert(error.toString()); return; }
+			FS.write(stream, uint8Arr, 0, uint8Arr.length, 0);
+			FS.close(stream);
+		}
+		var fname = "";
+		function save_files() { fname = this.files[0].name; file_reader.readAsArrayBuffer(this.files[0]); };
+		var file_selector = document.createElement('input');
+		file_selector.setAttribute('type', 'file');
+		file_selector.addEventListener("change", save_files, false);
+		['dragenter','dragover','dragleave','drop'].forEach(function(ev) {
+			document.body.addEventListener(ev, function(e){e.preventDefault();e.stopPropagation();}, false);
+		});
+		document.body.addEventListener('drop', function(e) {
+			var files = e.dataTransfer.files;
+			if (files.length > 0) { fname = files[0].name; file_reader.readAsArrayBuffer(files[0]); }
+		}, false);
+	</script>
+
+	{{{ SCRIPT }}}
+</body>
+</html>
