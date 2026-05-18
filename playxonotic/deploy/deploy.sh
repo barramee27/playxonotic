@@ -42,6 +42,12 @@ else
   echo "  Build with: cd xonotic-web-port && bash build-wasm.sh"
 fi
 
+# Optional: sync pk3/d0pk mirrors VPS /game/data (set GAME_DATA_DIR locally)
+if [ -n "${GAME_DATA_DIR}" ] && [ -d "${GAME_DATA_DIR}" ]; then
+  echo "Uploading game data from GAME_DATA_DIR=${GAME_DATA_DIR}..."
+  rsync -avz --progress "${GAME_DATA_DIR}/" ${VPS_USER}@${VPS_HOST}:${VPS_DIR}/game/data/
+fi
+
 echo ""
 echo "=== Deploy complete ==="
 echo ""

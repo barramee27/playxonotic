@@ -1,6 +1,6 @@
 [submodule "xonotic-web-port/source/darkplaces"]
 	path = xonotic-web-port/source/darkplaces
-	url = https://github.com/xonotic/darkplaces.git
+	url = https://github.com/barramee27/darkplaces-playxonotic.git
 [submodule "xonotic-web-port/source/d0_blind_id"]
 	path = xonotic-web-port/source/d0_blind_id
 	url = https://github.com/xonotic/d0_blind_id.git
